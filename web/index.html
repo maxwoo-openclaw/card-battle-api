@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Card Battle Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #1a4d2e;
+      min-height: 100vh;
+      color: #fff;
+    }
+
+    /* Auth Screen */
+    #auth-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at center, #2d7a4a 0%, #1a4d2e 70%);
+    }
+
+    .auth-box {
+      background: rgba(0,0,0,0.4);
+      padding: 2rem;
+      border-radius: 12px;
+      width: 320px;
+    }
+
+    .auth-box h2 {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .auth-box input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    .auth-box button {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-bottom: 0.5rem;
+    }
+
+    .btn-primary {
+      background: #3498db;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2980b9;
+    }
+
+    .btn-secondary {
+      background: #2ecc71;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #27ae60;
+    }
+
+    .auth-switch {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: #aaa;
+    }
+
+    .auth-switch:hover {
+      color: #fff;
+    }
+
+    .auth-error {
+      color: #e74c3c;
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    /* Lobby Screen */
+    #lobby-screen {
+      display: none;
+      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .lobby-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .lobby-header h1 {
+      font-size: 1.8rem;
+    }
+
+    .lobby-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .lobby-actions button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .stats-box {
+      background: rgba(0,0,0,0.3);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+
+    .decks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .deck-card {
+      background: rgba(255,255,255,0.1);
+      padding: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .deck-card:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+
+    .deck-card.selected {
+      border: 2px solid #f1c40f;
+    }
+
+    .matchmaking-status {
+      text-align: center;
+      padding: 2rem;
+      display: none;
+    }
+
+    .matchmaking-status.active {
+      display: block;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Game Screen */
+    #game-screen {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+
+    .opponent-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .hp-bar-container {
+      width: 150px;
+    }
+
+    .hp-bar-label {
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .hp-bar {
+      height: 16px;
+      background: #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .hp-bar-fill {
+      height: 100%;
+      background: #e74c3c;
+      transition: width 0.3s;
+    }
+
+    .energy-display {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+      color: #f1c40f;
+    }
+
+    .turn-indicator {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    .turn-indicator.your-turn {
+      background: #2ecc71;
+    }
+
+    .turn-indicator.opponent-turn {
+      background: #e74c3c;
+    }
+
+    /* Field Areas */
+    .field-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .opponent-area, .player-area {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .hand-area {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      min-height: 80px;
+    }
+
+    .opponent-hand .card {
+      width: 50px;
+      height: 70px;
+      background: linear-gradient(135deg, #2c3e50, #1a252f);
+      border-radius: 6px;
+      border: 2px solid #34495e;
+    }
+
+    .divider {
+      height: 4px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      margin: 0.5rem 0;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .field-slot {
+      width: 90px;
+      height: 120px;
+      border: 2px dashed rgba(255,255,255,0.3);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .field-slot:hover {
+      border-color: rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .field-slot.occupied {
+      border-style: solid;
+    }
+
+    .field-slot.selected {
+      border-color: #f1c40f;
+      box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+    }
+
+    .field-slot.target {
+      border-color: #e74c3c;
+      box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+    }
+
+    /* Cards */
+    .card {
+      width: 80px;
+      height: 110px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      font-size: 0.7rem;
+      text-align: center;
+      padding: 0.25rem;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .card.monster {
+      background: linear-gradient(180deg, #ecf0f1, #bdc3c7);
+      border: 3px solid #3498db;
+      color: #2c3e50;
+    }
+
+    .card.spell {
+      background: linear-gradient(180deg, #f9e79f, #f39c12);
+      border: 3px solid #e67e22;
+      color: #784212;
+    }
+
+    .card.trap {
+      background: linear-gradient(180deg, #f5b7b1, #c39bd3);
+      border: 3px solid #8e44ad;
+      color: #4a235a;
+    }
+
+    .card .card-name {
+      font-weight: bold;
+      font-size: 0.65rem;
+      margin-bottom: 0.25rem;
+      line-height: 1.1;
+    }
+
+    .card .card-type {
+      font-size: 0.55rem;
+      opacity: 0.8;
+    }
+
+    .card .card-stats {
+      position: absolute;
+      bottom: 4px;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    .card.monster .card-stats {
+      color: #e74c3c;
+    }
+
+    /* Player hand - playable cards */
+    .player-hand .card.playable {
+      box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: fixed;
+      background: rgba(0,0,0,0.95);
+      color: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      max-width: 250px;
+      z-index: 1000;
+      pointer-events: none;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .tooltip.visible {
+      display: block;
+    }
+
+    .tooltip .name {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .tooltip .type {
+      color: #aaa;
+      margin-bottom: 0.5rem;
+    }
+
+    .tooltip .desc {
+      font-style: italic;
+      margin-bottom: 0.5rem;
+    }
+
+    .tooltip .stats {
+      color: #f1c40f;
+    }
+
+    /* Bottom Bar */
+    .bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      margin-top: 0.5rem;
+    }
+
+    .player-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .action-buttons button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-end-turn {
+      background: #2ecc71;
+      color: white;
+    }
+
+    .btn-end-turn:hover {
+      background: #27ae60;
+    }
+
+    .btn-surrender {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-surrender:hover {
+      background: #c0392b;
+    }
+
+    /* Deck Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #1a4d2e;
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .available-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .available-cards .card {
+      width: 100px;
+      height: 130px;
+    }
+
+    .available-cards .card.selected {
+      box-shadow: 0 0 12px #f1c40f;
+      transform: translateY(-4px);
+    }
+
+    .deck-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-height: 60px;
+      padding: 1rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .deck-preview .card {
+      width: 50px;
+      height: 70px;
+      font-size: 0.5rem;
+    }
+
+    .deck-name-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Game Over Overlay */
+    .game-over-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .game-over-overlay.active {
+      display: flex;
+    }
+
+    .game-over-overlay h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .game-over-overlay.victory h1 {
+      color: #f1c40f;
+    }
+
+    .game-over-overlay.defeat h1 {
+      color: #e74c3c;
+    }
+
+    .game-over-overlay button {
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      background: #3498db;
+      color: white;
+    }
+
+    /* Log */
+    .game-log {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      width: 250px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.7);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      display: none;
+    }
+
+    .game-log.visible {
+      display: block;
+    }
+
+    .log-entry {
+      padding: 0.25rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    /* Animations */
+    @keyframes cardPlay {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .card-played {
+      animation: cardPlay 0.3s ease;
+    }
+
+    @keyframes attackFlash {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+    }
+
+    .attacking {
+      animation: attackFlash 0.2s ease 2;
+    }
+  </style>
+</head>
+<body>
+  <!-- Auth Screen -->
+  <div id="auth-screen">
+    <div class="auth-box">
+      <h2 id="auth-title">Login</h2>
+      <div class="auth-error" id="auth-error"></div>
+      <input type="text" id="username" placeholder="Username" />
+      <input type="password" id="password" placeholder="Password" />
+      <input type="email" id="email" placeholder="Email" style="display:none" />
+      <button class="btn-primary" id="auth-submit">Login</button>
+      <button class="btn-secondary" id="auth-switch">Need an account? Register</button>
+    </div>
+  </div>
+
+  <!-- Lobby Screen -->
+  <div id="lobby-screen">
+    <div class="lobby-header">
+      <h1>Card Battle</h1>
+      <div class="lobby-actions">
+        <button class="btn-primary" id="btn-create-deck">Create Deck</button>
+        <button class="btn-secondary" id="btn-logout">Logout</button>
+      </div>
+    </div>
+
+    <div class="stats-box">
+      <h3>Your Stats</h3>
+      <p id="user-stats">Loading...</p>
+    </div>
+
+    <h3>Your Decks</h3>
+    <div class="decks-grid" id="decks-list"></div>
+
+    <div class="matchmaking-status" id="matchmaking">
+      <div class="spinner"></div>
+      <p>Searching for opponent...</p>
+      <button class="btn-surrender" id="btn-cancel-matchmaking">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen">
+    <div class="top-bar">
+      <div class="opponent-info">
+        <span>Opponent</span>
+        <div class="hp-bar-container">
+          <div class="hp-bar-label">HP: <span id="opp-hp-text">100</span></div>
+          <div class="hp-bar">
+            <div class="hp-bar-fill" id="opp-hp-bar" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="energy-display">
+        ⚡ <span id="opp-energy">0</span>/<span id="opp-max-energy">0</span>
+      </div>
+      <div class="turn-indicator" id="turn-indicator">Waiting</div>
+    </div>
+
+    <div class="field-area">
+      <div class="opponent-area">
+        <div class="hand-area opponent-hand" id="opp-hand"></div>
+        <div class="field-row" id="opp-monsters">
+          <div class="field-slot" data-slot="opp-monster-0"></div>
+          <div class="field-slot" data-slot="opp-monster-1"></div>
+          <div class="field-slot" data-slot="opp-monster-2"></div>
+          <div class="field-slot" data-slot="opp-monster-3"></div>
+          <div class="field-slot" data-slot="opp-monster-4"></div>
+        </div>
+        <div class="field-row" id="opp-spells">
+          <div class="field-slot" data-slot="opp-spell-0"></div>
+          <div class="field-slot" data-slot="opp-spell-1"></div>
+          <div class="field-slot" data-slot="opp-spell-2"></div>
+          <div class="field-slot" data-slot="opp-spell-3"></div>
+          <div class="field-slot" data-slot="opp-spell-4"></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="player-area">
+        <div class="field-row" id="player-monsters">
+          <div class="field-slot" data-slot="player-monster-0"></div>
+          <div class="field-slot" data-slot="player-monster-1"></div>
+          <div class="field-slot" data-slot="player-monster-2"></div>
+          <div class="field-slot" data-slot="player-monster-3"></div>
+          <div class="field-slot" data-slot="player-monster-4"></div>
+        </div>
+        <div class="field-row" id="player-spells">
+          <div class="field-slot" data-slot="player-spell-0"></div>
+          <div class="field-slot" data-slot="player-spell-1"></div>
+          <div class="field-slot" data-slot="player-spell-2"></div>
+          <div class="field-slot" data-slot="player-spell-3"></div>
+          <div class="field-slot" data-slot="player-spell-4"></div>
+        </div>
+        <div class="hand-area player-hand" id="player-hand"></div>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="player-info">
+        <span>You</span>
+        <div class="hp-bar-container">
+          <div class="hp-bar-label">HP: <span id="player-hp-text">100</span></div>
+          <div class="hp-bar">
+            <div class="hp-bar-fill" id="player-hp-bar" style="width: 100%"></div>
+          </div>
+        </div>
+        <div class="energy-display">
+          ⚡ <span id="player-energy">0</span>/<span id="player-max-energy">0</span>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button class="btn-end-turn" id="btn-end-turn">End Turn</button>
+        <button class="btn-surrender" id="btn-surrender">Surrender</button>
+      </div>
+    </div>
+
+    <div class="game-log" id="game-log"></div>
+  </div>
+
+  <!-- Tooltip -->
+  <div class="tooltip" id="tooltip">
+    <div class="name"></div>
+    <div class="type"></div>
+    <div class="desc"></div>
+    <div class="stats"></div>
+  </div>
+
+  <!-- Deck Modal -->
+  <div class="modal" id="deck-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="deck-modal-title">Create Deck</h2>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <input type="text" class="deck-name-input" id="deck-name" placeholder="Deck Name" />
+      <h4>Available Cards</h4>
+      <div class="available-cards" id="available-cards"></div>
+      <h4>Deck Preview (<span id="deck-count">0</span>/20)</h4>
+      <div class="deck-preview" id="deck-preview"></div>
+      <button class="btn-primary" id="btn-save-deck">Save Deck</button>
+    </div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div class="game-over-overlay" id="game-over">
+    <h1 id="game-over-text">Victory!</h1>
+    <button id="btn-back-lobby">Back to Lobby</button>
+  </div>
+
+  <script>
+    // State
+    const state = {
+      token: localStorage.getItem('token'),
+      user: null,
+      cards: [],
+      decks: [],
+      selectedDeck: null,
+      gameState: null,
+      ws: null,
+      selectedCard: null,
+      selectedMonster: null,
+      isMyTurn: false,
+      inMatchmaking: false,
+      selectedSlot: null
+    };
+
+    const API_BASE = `${window.location.protocol}//${window.location.hostname}:8000`;
+
+    // DOM Elements
+    const screens = {
+      auth: document.getElementById('auth-screen'),
+      lobby: document.getElementById('lobby-screen'),
+      game: document.getElementById('game-screen')
+    };
+
+    // Utility Functions
+    function showScreen(screen) {
+      Object.values(screens).forEach(s => s.style.display = 'none');
+      screen.style.display = '';
+    }
+
+    function api(endpoint, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+      return fetch(`${API_BASE}${endpoint}`, { ...options, headers: { ...headers, ...options.headers } })
+        .then(r => r.json())
+        .catch(err => { console.error(err); return { error: err.message }; });
+    }
+
+    function addLog(message) {
+      const log = document.getElementById('game-log');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.textContent = message;
+      log.insertBefore(entry, log.firstChild);
+    }
+
+    // Card Rendering
+    function renderCard(card, options = {}) {
+      const div = document.createElement('div');
+      div.className = `card ${card.type}`;
+      if (options.playable) div.classList.add('playable');
+      div.dataset.cardId = card.id;
+      div.dataset.index = options.index;
+
+      let statsHtml = '';
+      if (card.type === 'monster') {
+        statsHtml = `<div class="card-stats">⚔️${card.attack} 🛡️${card.defense}</div>`;
+      }
+
+      div.innerHTML = `
+        <div class="card-name">${card.name}</div>
+        <div class="card-type">${card.type}</div>
+        ${statsHtml}
+      `;
+
+      div.addEventListener('mouseenter', (e) => showTooltip(e, card));
+      div.addEventListener('mouseleave', hideTooltip);
+      div.addEventListener('mousemove', moveTooltip);
+
+      return div;
+    }
+
+    function renderCardBack() {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.style.background = 'linear-gradient(135deg, #2c3e50, #1a252f)';
+      div.style.border = '2px solid #34495e';
+      return div;
+    }
+
+    // Tooltip
+    function showTooltip(e, card) {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.querySelector('.name').textContent = card.name;
+      tooltip.querySelector('.type').textContent = card.type.charAt(0).toUpperCase() + card.type.slice(1);
+      tooltip.querySelector('.desc').textContent = card.description || '';
+      let stats = '';
+      if (card.type === 'monster') {
+        stats = `Attack: ${card.attack} | Defense: ${card.defense}`;
+      }
+      if (card.cost) stats += (stats ? ' | ' : '') + `Cost: ${card.cost}`;
+      tooltip.querySelector('.stats').textContent = stats;
+      tooltip.classList.add('visible');
+      moveTooltip(e);
+    }
+
+    function moveTooltip(e) {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.style.left = (e.clientX + 15) + 'px';
+      tooltip.style.top = (e.clientY + 15) + 'px';
+    }
+
+    function hideTooltip() {
+      document.getElementById('tooltip').classList.remove('visible');
+    }
+
+    // Auth
+    let isRegistering = false;
+
+    document.getElementById('auth-submit').addEventListener('click', async () => {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const email = document.getElementById('email').value;
+      const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
+
+      const payload = isRegistering ? { username, password, email } : { username, password };
+      console.log('Auth request:', endpoint, payload);
+      console.log('JSON:', JSON.stringify(payload));
+      const result = await api(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      console.log('Auth response:', result);
+
+      if (result.access_token) {
+        state.token = result.access_token;
+        localStorage.setItem('token', result.access_token);
+        state.user = result;
+        document.getElementById('auth-error').style.display = 'none';
+        loadLobby();
+      } else {
+        const errEl = document.getElementById('auth-error');
+        errEl.textContent = result.detail || JSON.stringify(result);
+        errEl.style.display = 'block';
+      }
+    });
+
+    document.getElementById('auth-switch').addEventListener('click', () => {
+      isRegistering = !isRegistering;
+      document.getElementById('auth-title').textContent = isRegistering ? 'Register' : 'Login';
+      document.getElementById('auth-submit').textContent = isRegistering ? 'Register' : 'Login';
+      document.getElementById('auth-switch').textContent = isRegistering ? 'Have an account? Login' : 'Need an account? Register';
+      document.getElementById('email').style.display = isRegistering ? 'block' : 'none';
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      state.token = null;
+      state.user = null;
+      showScreen(screens.auth);
+    });
+
+    // Lobby
+    async function loadLobby() {
+      showScreen(screens.lobby);
+
+      // Load user stats
+      const stats = await api('/api/users/me/stats');
+      if (!stats.error) {
+        document.getElementById('user-stats').textContent =
+          `Wins: ${stats.wins || 0} | Losses: ${stats.losses || 0}`;
+      }
+
+      // Load decks
+      state.decks = await api('/api/decks');
+      renderDecks();
+
+      // Load cards for deck creation
+      state.cards = await api('/api/cards');
+    }
+
+    function renderDecks() {
+      const container = document.getElementById('decks-list');
+      container.innerHTML = '';
+
+      if (!state.decks || state.decks.length === 0) {
+        container.innerHTML = '<p>No decks yet. Create one!</p>';
+        return;
+      }
+
+      state.decks.forEach(deck => {
+        const card = document.createElement('div');
+        card.className = 'deck-card';
+        if (state.selectedDeck && state.selectedDeck.id === deck.id) {
+          card.classList.add('selected');
+        }
+        card.innerHTML = `<strong>${deck.name}</strong><br><small>${deck.cards ? deck.cards.length : 0} cards</small>`;
+        card.addEventListener('click', () => selectDeck(deck));
+        container.appendChild(card);
+      });
+    }
+
+    function selectDeck(deck) {
+      state.selectedDeck = deck;
+      renderDecks();
+    }
+
+    // Deck Modal
+    document.getElementById('btn-create-deck').addEventListener('click', () => {
+      state.editingDeck = { id: null, name: '', cardIds: [] };
+      document.getElementById('deck-name').value = '';
+      document.getElementById('deck-modal-title').textContent = 'Create Deck';
+      renderAvailableCards();
+      renderDeckPreview();
+      document.getElementById('deck-modal').classList.add('active');
+    });
+
+    document.getElementById('modal-close').addEventListener('click', () => {
+      document.getElementById('deck-modal').classList.remove('active');
+    });
+
+    function renderAvailableCards() {
+      const container = document.getElementById('available-cards');
+      container.innerHTML = '';
+
+      state.cards.forEach(card => {
+        const el = renderCard(card);
+        if (state.editingDeck.cardIds.includes(card.id)) {
+          el.classList.add('selected');
+        }
+        el.addEventListener('click', () => toggleDeckCard(card.id));
+        container.appendChild(el);
+      });
+    }
+
+    function toggleDeckCard(cardId) {
+      const idx = state.editingDeck.cardIds.indexOf(cardId);
+      if (idx === -1) {
+        if (state.editingDeck.cardIds.length < 20) {
+          state.editingDeck.cardIds.push(cardId);
+        }
+      } else {
+        state.editingDeck.cardIds.splice(idx, 1);
+      }
+      renderAvailableCards();
+      renderDeckPreview();
+    }
+
+    function renderDeckPreview() {
+      const container = document.getElementById('deck-preview');
+      container.innerHTML = '';
+      document.getElementById('deck-count').textContent = state.editingDeck.cardIds.length;
+
+      state.editingDeck.cardIds.forEach(id => {
+        const card = state.cards.find(c => c.id === id);
+        if (card) {
+          const el = renderCard(card);
+          el.addEventListener('click', () => toggleDeckCard(id));
+          container.appendChild(el);
+        }
+      });
+    }
+
+    document.getElementById('btn-save-deck').addEventListener('click', async () => {
+      const name = document.getElementById('deck-name').value.trim();
+      if (!name) return alert('Please enter a deck name');
+      if (state.editingDeck.cardIds.length < 1) return alert('Deck needs at least 1 card');
+
+      const result = await api('/api/decks', {
+        method: 'POST',
+        body: JSON.stringify({ name, card_ids: state.editingDeck.cardIds })
+      });
+
+      if (!result.error) {
+        document.getElementById('deck-modal').classList.remove('active');
+        loadLobby();
+      } else {
+        alert('Failed to save deck');
+      }
+    });
+
+    // Matchmaking
+    document.getElementById('btn-cancel-matchmaking').addEventListener('click', cancelMatchmaking);
+
+    async function joinMatchmaking() {
+      if (!state.selectedDeck) return alert('Please select a deck first');
+
+      state.inMatchmaking = true;
+      document.getElementById('matchmaking').classList.add('active');
+      document.querySelector('.decks-grid').style.display = 'none';
+
+      const result = await api('/api/matchmaking/queue', { method: 'POST' });
+
+      if (result.error) {
+        alert('Failed to join matchmaking');
+        cancelMatchmaking();
+      }
+    }
+
+    async function cancelMatchmaking() {
+      state.inMatchmaking = false;
+      document.getElementById('matchmaking').classList.remove('active');
+      document.querySelector('.decks-grid').style.display = '';
+      await api('/api/matchmaking/queue', { method: 'DELETE' });
+    }
+
+    // Game
+    async function startGame(sessionId) {
+      state.sessionId = sessionId;
+      state.gameState = null;
+      state.selectedCard = null;
+      state.selectedMonster = null;
+      state.isMyTurn = false;
+
+      document.getElementById('game-log').innerHTML = '';
+      document.getElementById('game-log').classList.add('visible');
+      document.getElementById('game-over').classList.remove('active', 'victory', 'defeat');
+
+      showScreen(screens.game);
+      connectWebSocket();
+    }
+
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      state.ws = new WebSocket(`ws://localhost:8000/ws/game/${state.sessionId}`);
+
+      state.ws.onopen = () => {
+        addLog('Connected to game');
+      };
+
+      state.ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        handleGameMessage(msg);
+      };
+
+      state.ws.onclose = () => {
+        addLog('Disconnected from game');
+      };
+    }
+
+    function handleGameMessage(msg) {
+      switch (msg.type) {
+        case 'game_start':
+          state.gameState = msg.state;
+          state.isMyTurn = msg.state.current_turn === 'player';
+          renderGameState();
+          addLog(`Game started! ${state.isMyTurn ? 'Your turn!' : 'Opponent\'s turn'}`);
+          break;
+
+        case 'state_update':
+          state.gameState = msg.state;
+          state.isMyTurn = msg.state.current_turn === 'player';
+          renderGameState();
+          break;
+
+        case 'turn_change':
+          state.isMyTurn = msg.turn === 'player';
+          updateTurnIndicator();
+          if (state.isMyTurn) addLog('Your turn!');
+          else addLog('Opponent\'s turn');
+          break;
+
+        case 'card_played':
+          addLog(`${msg.player} played ${msg.card_name}`);
+          state.gameState = msg.state;
+          renderGameState();
+          break;
+
+        case 'attack_result':
+          addLog(`${msg.attacker} attacked ${msg.target} for ${msg.damage} damage`);
+          state.gameState = msg.state;
+          renderGameState();
+          break;
+
+        case 'game_over':
+          handleGameOver(msg.result);
+          break;
+      }
+    }
+
+    function renderGameState() {
+      if (!state.gameState) return;
+
+      const gs = state.gameState;
+
+      // Player HP
+      const playerHp = gs.player_hp || 100;
+      document.getElementById('player-hp-text').textContent = playerHp;
+      document.getElementById('player-hp-bar').style.width = `${playerHp}%`;
+
+      // Opponent HP
+      const oppHp = gs.opponent_hp || 100;
+      document.getElementById('opp-hp-text').textContent = oppHp;
+      document.getElementById('opp-hp-bar').style.width = `${oppHp}%`;
+
+      // Player Energy
+      document.getElementById('player-energy').textContent = gs.player_energy || 0;
+      document.getElementById('player-max-energy').textContent = gs.player_max_energy || 10;
+
+      // Opponent Energy
+      document.getElementById('opp-energy').textContent = gs.opponent_energy || 0;
+      document.getElementById('opp-max-energy').textContent = gs.opponent_max_energy || 10;
+
+      // Player Hand
+      renderPlayerHand(gs.player_hand || []);
+
+      // Player Field
+      renderPlayerField(gs.player_field || { monsters: [], spells: [] });
+
+      // Opponent Field (monsters visible)
+      renderOpponentField(gs.opponent_field || { monsters: [], spells: [] });
+
+      // Opponent Hand (card backs)
+      renderOpponentHand(gs.opponent_hand_count || 0);
+
+      updateTurnIndicator();
+    }
+
+    function renderPlayerHand(hand) {
+      const container = document.getElementById('player-hand');
+      container.innerHTML = '';
+
+      hand.forEach((card, index) => {
+        const canPlay = state.isMyTurn && (card.cost || 0) <= (state.gameState.player_energy || 0);
+        const el = renderCard(card, { playable: canPlay, index });
+        el.addEventListener('click', () => onCardClick(card, index));
+        container.appendChild(el);
+      });
+    }
+
+    function renderPlayerField(field) {
+      const monsterSlots = document.querySelectorAll('[data-slot^="player-monster"]');
+      const spellSlots = document.querySelectorAll('[data-slot^="player-spell"]');
+
+      field.monsters.forEach((card, i) => {
+        if (monsterSlots[i]) {
+          const el = renderCard(card, { index: i });
+          el.addEventListener('click', () => onOwnMonsterClick(i, card));
+          el.classList.add('card-played');
+          monsterSlots[i].innerHTML = '';
+          monsterSlots[i].appendChild(el);
+          monsterSlots[i].classList.add('occupied');
+        }
+      });
+
+      // Clear empty slots
+      for (let i = field.monsters.length; i < 5; i++) {
+        if (monsterSlots[i]) {
+          monsterSlots[i].innerHTML = '';
+          monsterSlots[i].classList.remove('occupied');
+        }
+      }
+
+      field.spells.forEach((card, i) => {
+        if (spellSlots[i]) {
+          const el = renderCard(card);
+          spellSlots[i].innerHTML = '';
+          spellSlots[i].appendChild(el);
+          spellSlots[i].classList.add('occupied');
+        }
+      });
+
+      for (let i = field.spells.length; i < 5; i++) {
+        if (spellSlots[i]) {
+          spellSlots[i].innerHTML = '';
+          spellSlots[i].classList.remove('occupied');
+        }
+      }
+    }
+
+    function renderOpponentField(field) {
+      const monsterSlots = document.querySelectorAll('[data-slot^="opp-monster"]');
+      const spellSlots = document.querySelectorAll('[data-slot^="opp-spell"]');
+
+      field.monsters.forEach((card, i) => {
+        if (monsterSlots[i]) {
+          const el = renderCard(card);
+          monsterSlots[i].innerHTML = '';
+          monsterSlots[i].appendChild(el);
+          monsterSlots[i].classList.add('occupied');
+        }
+      });
+
+      for (let i = field.monsters.length; i < 5; i++) {
+        if (monsterSlots[i]) {
+          monsterSlots[i].innerHTML = '';
+          monsterSlots[i].classList.remove('occupied');
+        }
+      }
+
+      for (let i = 0; i < 5; i++) {
+        if (spellSlots[i]) {
+          spellSlots[i].innerHTML = '';
+          spellSlots[i].classList.remove('occupied');
+        }
+      }
+    }
+
+    function renderOpponentHand(count) {
+      const container = document.getElementById('opp-hand');
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        container.appendChild(renderCardBack());
+      }
+    }
+
+    function updateTurnIndicator() {
+      const indicator = document.getElementById('turn-indicator');
+      if (state.isMyTurn) {
+        indicator.textContent = 'Your Turn';
+        indicator.className = 'turn-indicator your-turn';
+      } else {
+        indicator.textContent = 'Opponent\'s Turn';
+        indicator.className = 'turn-indicator opponent-turn';
+      }
+    }
+
+    function onCardClick(card, index) {
+      if (!state.isMyTurn) return;
+
+      // Clear any previous selection
+      document.querySelectorAll('.field-slot').forEach(s => s.classList.remove('target'));
+      document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+
+      if (card.type === 'monster') {
+        // Try to play on field
+        state.selectedCard = { card, index };
+        highlightValidSlots('monster');
+      } else {
+        // Spell - highlight spell slots
+        state.selectedCard = { card, index, instant: true };
+        highlightValidSlots('spell');
+      }
+    }
+
+    function onOwnMonsterClick(index, card) {
+      if (!state.isMyTurn) return;
+
+      // Clear previous selection
+      document.querySelectorAll('.field-slot').forEach(s => s.classList.remove('selected', 'target'));
+      document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+
+      // Select this monster for attacking
+      state.selectedMonster = { index, card };
+      document.querySelector(`[data-slot="player-monster-${index}"]`).classList.add('selected');
+
+      // Highlight opponent monsters as targets
+      highlightAttackTargets();
+    }
+
+    function highlightValidSlots(type) {
+      const gs = state.gameState;
+      const occupiedMonsters = gs.player_field.monsters.length;
+      const occupiedSpells = gs.player_field.spells.length;
+
+      if (type === 'monster') {
+        for (let i = 0; i < 5; i++) {
+          if (i >= occupiedMonsters) {
+            const slot = document.querySelector(`[data-slot="player-monster-${i}"]`);
+            if (slot) slot.classList.add('target');
+          }
+        }
+      } else if (type === 'spell') {
+        for (let i = 0; i < 5; i++) {
+          if (i >= occupiedSpells) {
+            const slot = document.querySelector(`[data-slot="player-spell-${i}"]`);
+            if (slot) slot.classList.add('target');
+          }
+        }
+      }
+    }
+
+    function highlightAttackTargets() {
+      const oppMonsters = state.gameState.opponent_field.monsters;
+      oppMonsters.forEach((_, i) => {
+        const slot = document.querySelector(`[data-slot="opp-monster-${i}"]`);
+        if (slot) slot.classList.add('target');
+      });
+    }
+
+    // Field slot click handlers
+    document.querySelectorAll('.field-slot').forEach(slot => {
+      slot.addEventListener('click', onFieldSlotClick);
+    });
+
+    function onFieldSlotClick(e) {
+      const slotName = e.currentTarget.dataset.slot;
+      const [owner, type, index] = slotName.split('-');
+
+      if (state.selectedCard) {
+        // Playing a card from hand
+        if (owner === 'player') {
+          if (state.selectedCard.card.type === 'monster' && type === 'monster') {
+            playCard(parseInt(index));
+          } else if ((state.selectedCard.card.type === 'spell' || state.selectedCard.card.type === 'trap') && type === 'spell') {
+            playCard(parseInt(index));
+          }
+        }
+      } else if (state.selectedMonster) {
+        // Attacking with selected monster
+        if (owner === 'opp' && type === 'monster') {
+          attack(parseInt(index));
+        }
+      }
+
+      // Clear selections
+      document.querySelectorAll('.field-slot').forEach(s => s.classList.remove('selected', 'target'));
+      document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+      state.selectedCard = null;
+      state.selectedMonster = null;
+    }
+
+    function playCard(slotIndex) {
+      if (!state.selectedCard) return;
+
+      state.ws.send(JSON.stringify({
+        type: 'play_card',
+        card_index: state.selectedCard.index,
+        slot_index: slotIndex,
+        slot_type: state.selectedCard.card.type === 'monster' ? 'monster' : 'spell'
+      }));
+    }
+
+    function attack(targetIndex) {
+      if (!state.selectedMonster) return;
+
+      state.ws.send(JSON.stringify({
+        type: 'attack',
+        attacker_index: state.selectedMonster.index,
+        target_index: targetIndex
+      }));
+    }
+
+    // End Turn
+    document.getElementById('btn-end-turn').addEventListener('click', () => {
+      state.ws.send(JSON.stringify({ type: 'end_turn' }));
+    });
+
+    // Surrender
+    document.getElementById('btn-surrender').addEventListener('click', () => {
+      if (confirm('Are you sure you want to surrender?')) {
+        state.ws.send(JSON.stringify({ type: 'surrender' }));
+      }
+    });
+
+    function handleGameOver(result) {
+      const overlay = document.getElementById('game-over');
+      const text = document.getElementById('game-over-text');
+
+      if (result === 'win') {
+        overlay.classList.add('victory');
+        text.textContent = 'Victory!';
+        addLog('You won!');
+      } else {
+        overlay.classList.add('defeat');
+        text.textContent = 'Defeat';
+        addLog('You lost.');
+      }
+
+      overlay.classList.add('active');
+      document.getElementById('game-log').classList.remove('visible');
+    }
+
+    document.getElementById('btn-back-lobby').addEventListener('click', () => {
+      if (state.ws) {
+        state.ws.close();
+        state.ws = null;
+      }
+      loadLobby();
+    });
+
+    // Wire up matchmaking button (needs a selected deck)
+    document.getElementById('decks-list').addEventListener('click', () => {}, true);
+
+    // Override deck click to also show join button
+    const originalSelectDeck = selectDeck;
+    selectDeck = function(deck) {
+      originalSelectDeck(deck);
+      // Add join button if not present
+      if (!document.getElementById('btn-join-matchmaking')) {
+        const btn = document.createElement('button');
+        btn.id = 'btn-join-matchmaking';
+        btn.className = 'btn-secondary';
+        btn.textContent = 'Join Matchmaking';
+        btn.style.marginLeft = '1rem';
+        btn.addEventListener('click', joinMatchmaking);
+        document.querySelector('.lobby-actions').appendChild(btn);
+      }
+    };
+
+    // Initialize
+    if (state.token) {
+      loadLobby();
+    } else {
+      showScreen(screens.auth);
+    }
+
+    // Add join button immediately since user likely has decks already
+    window.addEventListener('load', () => {
+      if (state.token) {
+        const btn = document.createElement('button');
+        btn.id = 'btn-join-matchmaking';
+        btn.className = 'btn-secondary';
+        btn.textContent = 'Join Matchmaking';
+        btn.style.marginLeft = '1rem';
+        btn.addEventListener('click', joinMatchmaking);
+        document.querySelector('.lobby-actions').appendChild(btn);
+      }
+    });
+  </script>
+</body>
+</html>
