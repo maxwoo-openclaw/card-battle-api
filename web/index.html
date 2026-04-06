@@ -96,6 +96,14 @@
       display: none;
     }
 
+    .auth-success {
+      color: #2ecc71;
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+
     /* Lobby Screen */
     #lobby-screen {
       display: none;
@@ -665,6 +673,7 @@
     <div class="auth-box">
       <h2 id="auth-title">Login</h2>
       <div class="auth-error" id="auth-error"></div>
+      <div class="auth-success" id="auth-success"></div>
       <input type="text" id="username" placeholder="Username" />
       <input type="password" id="password" placeholder="Password" />
       <input type="email" id="email" placeholder="Email" style="display:none" />
@@ -837,7 +846,7 @@
     // Utility Functions
     function showScreen(screen) {
       Object.values(screens).forEach(s => s.style.display = 'none');
-      screen.style.display = '';
+      screen.style.display = 'block';
     }
 
     function api(endpoint, options = {}) {
@@ -935,16 +944,47 @@
       });
       console.log('Auth response:', result);
 
-      if (result.access_token) {
-        state.token = result.access_token;
-        localStorage.setItem('token', result.access_token);
-        state.user = result;
-        document.getElementById('auth-error').style.display = 'none';
-        loadLobby();
+      if (isRegistering) {
+        // Handle registration response
+        if (result.message && result.user) {
+          const successEl = document.getElementById('auth-success');
+          successEl.textContent = result.message;
+          successEl.style.display = 'block';
+          document.getElementById('auth-error').style.display = 'none';
+
+          // Switch to login mode after short delay
+          setTimeout(() => {
+            isRegistering = false;
+            document.getElementById('auth-title').textContent = 'Login';
+            document.getElementById('auth-submit').textContent = 'Login';
+            document.getElementById('auth-switch').textContent = 'Need an account? Register';
+            document.getElementById('email').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('email').value = '';
+            successEl.style.display = 'none';
+          }, 2000);
+        } else {
+          const errEl = document.getElementById('auth-error');
+          errEl.textContent = result.detail || JSON.stringify(result);
+          errEl.style.display = 'block';
+          document.getElementById('auth-success').style.display = 'none';
+        }
       } else {
-        const errEl = document.getElementById('auth-error');
-        errEl.textContent = result.detail || JSON.stringify(result);
-        errEl.style.display = 'block';
+        // Handle login response
+        if (result.access_token) {
+          state.token = result.access_token;
+          localStorage.setItem('token', result.access_token);
+          state.user = result;
+          document.getElementById('auth-error').style.display = 'none';
+          document.getElementById('auth-success').style.display = 'none';
+          loadLobby();
+        } else {
+          const errEl = document.getElementById('auth-error');
+          errEl.textContent = result.detail || JSON.stringify(result);
+          errEl.style.display = 'block';
+          document.getElementById('auth-success').style.display = 'none';
+        }
       }
     });
 

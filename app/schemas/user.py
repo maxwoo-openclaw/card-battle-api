@@ -28,6 +28,11 @@ class UserRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UserRegisterResponse(BaseModel):
+    message: str
+    user: UserRead
+
+
 class Token(BaseModel):
     access_token: str
     refresh_token: str
