@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/test_api.py -v)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)",
+      "Bash(python -m pytest tests/test_api.py::test_create_deck -v)",
+      "Bash(python -m pytest tests/test_api.py::test_create_deck -v --tb=short)",
+      "Bash(python -m pytest tests/ -v)"
+    ]
+  }
+}
