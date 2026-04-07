@@ -90,6 +90,7 @@ export function LobbyPage() {
         <h1>Card Battle</h1>
         <div className="lobby-actions">
           <button className="btn-primary" onClick={() => setIsModalOpen(true)}>Create Deck</button>
+          <button className="btn-secondary" onClick={() => navigate('/rules')}>📜 Rules</button>
           <button className="btn-secondary" onClick={handleJoinMatchmaking} disabled={!selectedDeck || isMatchmaking}>
             Join Matchmaking
           </button>

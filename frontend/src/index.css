@@ -620,6 +620,25 @@ body {
   background: #c0392b;
 }
 
+.btn-rules {
+  background: #9b59b6;
+  color: white;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.btn-rules:hover {
+  background: #8e44ad;
+}
+
 /* Deck Modal */
 .modal {
   display: none;
