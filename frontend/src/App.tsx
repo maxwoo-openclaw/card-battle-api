@@ -5,6 +5,7 @@ import { LobbyProvider } from './store/LobbyContext';
 import { AuthPage } from './pages/Auth';
 import { LobbyPage } from './pages/Lobby';
 import { GamePage } from './pages/Game';
+import { RulesPage } from './pages/Rules';
 import './index.css';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/rules" element={<RulesPage />} />
               <Route
                 path="/game/:sessionId"
                 element={
