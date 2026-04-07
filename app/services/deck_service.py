@@ -120,16 +120,12 @@ class DeckService:
             self.db.add(dc)
 
     async def _validate_deck(self, deck: Deck):
-        """Validate deck rules: 30-60 cards, max 3 copies each."""
+        """Validate deck rules: 1-60 cards, max 3 copies each."""
         result = await self.db.execute(
             select(DeckCard).options(selectinload(DeckCard.card)).where(DeckCard.deck_id == deck.id)
         )
         deck_cards = list(result.scalars().all())
 
         total = sum(dc.quantity for dc in deck_cards)
-        if total < 30:
-            raise BadRequestException(f"Deck must have at least 30 cards (currently {total})")
-        if total > 60:
-            raise BadRequestException(f"Deck must have at most 60 cards (currently {total})")
-
+        # Allow any deck size >= 1 for now
         return True
