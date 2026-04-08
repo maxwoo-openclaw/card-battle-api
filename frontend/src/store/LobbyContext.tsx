@@ -12,6 +12,8 @@ interface LobbyContextType {
   loadCards: (token: string) => Promise<void>;
   loadStats: (token: string) => Promise<void>;
   createDeck: (token: string, name: string, cardIds: number[]) => Promise<Deck>;
+  updateDeck: (token: string, deckId: number, name: string, cardIds: number[]) => Promise<Deck>;
+  deleteDeck: (token: string, deckId: number) => Promise<void>;
   setSelectedDeck: (deck: Deck | null) => void;
 }
 
@@ -50,6 +52,21 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
     return deck;
   }, []);
 
+  const updateDeck = useCallback(async (token: string, deckId: number, name: string, cardIds: number[]) => {
+    const deck = await deckApi.update(token, deckId, name, cardIds);
+    console.log('Update response:', deck);
+    setDecks((prev) => prev.map((d) => (d.id === deckId ? deck : d)));
+    return deck;
+  }, []);
+
+  const deleteDeck = useCallback(async (token: string, deckId: number) => {
+    await deckApi.delete(token, deckId);
+    setDecks((prev) => prev.filter((d) => d.id !== deckId));
+    if (selectedDeck?.id === deckId) {
+      setSelectedDeck(null);
+    }
+  }, [selectedDeck]);
+
   return (
     <LobbyContext.Provider
       value={{
@@ -62,6 +79,8 @@ export function LobbyProvider({ children }: { children: React.ReactNode }) {
         loadCards,
         loadStats,
         createDeck,
+        updateDeck,
+        deleteDeck,
         setSelectedDeck,
       }}
     >

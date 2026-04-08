@@ -5,9 +5,10 @@ interface DeckListProps {
   decks: Deck[];
   selectedDeck: Deck | null;
   onSelectDeck: (deck: Deck) => void;
+  onEditDeck: (deck: Deck) => void;
 }
 
-export function DeckList({ decks, selectedDeck, onSelectDeck }: DeckListProps) {
+export function DeckList({ decks, selectedDeck, onSelectDeck, onEditDeck }: DeckListProps) {
   return (
     <div className="decks-grid">
       {decks.length === 0 ? (
@@ -19,6 +20,7 @@ export function DeckList({ decks, selectedDeck, onSelectDeck }: DeckListProps) {
             deck={deck}
             isSelected={selectedDeck?.id === deck.id}
             onClick={() => onSelectDeck(deck)}
+            onEdit={() => onEditDeck(deck)}
           />
         ))
       )}

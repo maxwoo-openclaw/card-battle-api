@@ -8,6 +8,9 @@ from app.schemas.deck import DeckCreate, DeckUpdate, DeckCardUpdate
 from app.utils.exceptions import NotFoundException, BadRequestException, ForbiddenException
 from typing import List
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DeckService:
@@ -62,18 +65,24 @@ class DeckService:
 
     async def update_deck(self, deck_id: int, user_id: int, deck_data: DeckUpdate) -> Deck:
         deck = await self.get_deck_by_id(deck_id, user_id)
+        logger.info(f"update_deck called: deck_id={deck_id}, cards={deck_data.cards}")
 
         if deck_data.name:
             deck.name = deck_data.name
 
         if deck_data.cards is not None:
+            logger.info(f"Processing cards update: {len(deck_data.cards)} cards")
             # Remove existing cards
             result = await self.db.execute(select(DeckCard).where(DeckCard.deck_id == deck_id))
-            for dc in result.scalars().all():
+            existing_cards = list(result.scalars().all())
+            logger.info(f"Deleting {len(existing_cards)} existing cards")
+            for dc in existing_cards:
                 await self.db.delete(dc)
+            await self.db.flush()  # Flush deletes before adding new cards
 
             # Add new cards
             for card_entry in deck_data.cards:
+                logger.info(f"Adding card: deck_id={deck.id}, card_id={card_entry.card_id}, quantity={card_entry.quantity}")
                 await self._add_card_to_deck(deck.id, card_entry.card_id, card_entry.quantity)
 
             await self._validate_deck(deck)
@@ -86,7 +95,9 @@ class DeckService:
             .options(selectinload(Deck.cards).selectinload(DeckCard.card))
             .where(Deck.id == deck_id)
         )
-        return result.scalar_one()
+        saved_deck = result.scalar_one()
+        logger.info(f"After commit, saved deck has {len(saved_deck.cards)} cards")
+        return saved_deck
 
     async def delete_deck(self, deck_id: int, user_id: int):
         deck = await self.get_deck_by_id(deck_id, user_id)

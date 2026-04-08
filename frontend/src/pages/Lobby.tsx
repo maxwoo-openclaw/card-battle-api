@@ -6,12 +6,14 @@ import { StatsBox } from '../components/lobby/StatsBox';
 import { DeckList } from '../components/lobby/DeckList';
 import { DeckModal } from '../components/lobby/DeckModal';
 import { matchmakingApi } from '../services/api';
+import type { Deck } from '../types';
 
 export function LobbyPage() {
   const navigate = useNavigate();
   const { token, logout, isAuthenticated } = useAuth();
-  const { decks, cards, stats, selectedDeck, loadDecks, loadCards, loadStats, createDeck, setSelectedDeck } = useLobby();
+  const { decks, cards, stats, selectedDeck, loadDecks, loadCards, loadStats, createDeck, updateDeck, deleteDeck, setSelectedDeck } = useLobby();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
   const [isMatchmaking, setIsMatchmaking] = useState(false);
 
   useEffect(() => {
@@ -27,13 +29,44 @@ export function LobbyPage() {
 
   const handleCreateDeck = async (name: string, cardIds: number[]) => {
     if (!token) return;
+    console.log('Saving deck:', { name, cardIds, editingDeckId: editingDeck?.id });
     try {
-      await createDeck(token, name, cardIds);
-      alert('Deck saved successfully!');
+      if (editingDeck) {
+        await updateDeck(token, editingDeck.id, name, cardIds);
+        alert('Deck updated successfully!');
+        // Reload decks to ensure fresh data
+        await loadDecks(token);
+      } else {
+        await createDeck(token, name, cardIds);
+        alert('Deck created successfully!');
+        await loadDecks(token);
+      }
+      setEditingDeck(null);
     } catch (err) {
-      console.error('Failed to create deck:', err);
+      console.error('Failed to save deck:', err);
       alert('Failed to save deck: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
+  };
+
+  const handleEditDeck = (deck: Deck) => {
+    setEditingDeck(deck);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteDeck = async (deckId: number) => {
+    if (!token) return;
+    try {
+      await deleteDeck(token, deckId);
+      alert('Deck deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete deck:', err);
+      alert('Failed to delete deck: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingDeck(null);
   };
 
   const handleJoinMatchmaking = async () => {
@@ -89,7 +122,7 @@ export function LobbyPage() {
       <div className="lobby-header">
         <h1>Card Battle</h1>
         <div className="lobby-actions">
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>Create Deck</button>
+          <button className="btn-primary" onClick={() => { setEditingDeck(null); setIsModalOpen(true); }}>Create Deck</button>
           <button className="btn-secondary" onClick={() => navigate('/rules')}>📜 Rules</button>
           <button className="btn-secondary" onClick={handleJoinMatchmaking} disabled={!selectedDeck || isMatchmaking}>
             Join Matchmaking
@@ -101,7 +134,7 @@ export function LobbyPage() {
       <StatsBox stats={stats} />
 
       <h3>Your Decks</h3>
-      <DeckList decks={decks} selectedDeck={selectedDeck} onSelectDeck={setSelectedDeck} />
+      <DeckList decks={decks} selectedDeck={selectedDeck} onSelectDeck={setSelectedDeck} onEditDeck={handleEditDeck} />
 
       {isMatchmaking && (
         <div className="matchmaking-status active">
@@ -113,9 +146,11 @@ export function LobbyPage() {
 
       <DeckModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
         cards={cards}
         onSave={handleCreateDeck}
+        onDelete={handleDeleteDeck}
+        editingDeck={editingDeck}
       />
     </div>
   );

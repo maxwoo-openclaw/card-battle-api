@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
+import logging
 from app.database import get_db
 from app.services.deck_service import DeckService
 from app.schemas.deck import DeckCreate, DeckRead, DeckUpdate
@@ -8,6 +9,7 @@ from app.utils.security import get_current_user
 from app.models.user import User
 
 router = APIRouter(prefix="/api/decks", tags=["Decks"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=List[DeckRead])
@@ -47,8 +49,12 @@ async def update_deck(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    logger.info(f"PUT /api/decks/{deck_id} called with data: {deck_data}")
+    logger.info(f"deck_data.cards = {deck_data.cards}")
     service = DeckService(db)
-    return await service.update_deck(deck_id, current_user.id, deck_data)
+    result = await service.update_deck(deck_id, current_user.id, deck_data)
+    logger.info(f"Returning deck with {len(result.cards)} cards")
+    return result
 
 
 @router.delete("/{deck_id}", status_code=204)

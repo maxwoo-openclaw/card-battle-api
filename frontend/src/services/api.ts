@@ -18,6 +18,11 @@ export async function api<T>(endpoint: string, options: ApiOptions = {}): Promis
     headers,
   });
 
+  // Handle 204 No Content
+  if (response.status === 204) {
+    return {} as T;
+  }
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
     throw new Error(error.detail || `HTTP ${response.status}`);
@@ -59,6 +64,24 @@ export const deckApi = {
         name,
         cards: cardIds.map((card_id) => ({ card_id, quantity: 1 })),
       }),
+      token,
+    }),
+
+  update: (token: string, deckId: number, name: string, cardIds: number[]) => {
+    console.log('API update called:', { deckId, name, cards: cardIds });
+    return api<{ id: number; name: string; owner_id: number; is_active: number; cards: { card_id: number; quantity: number }[]; created_at: string; updated_at: string }>(`/api/decks/${deckId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        name,
+        cards: cardIds.map((card_id) => ({ card_id, quantity: 1 })),
+      }),
+      token,
+    });
+  },
+
+  delete: (token: string, deckId: number) =>
+    api<void>(`/api/decks/${deckId}`, {
+      method: 'DELETE',
       token,
     }),
 };

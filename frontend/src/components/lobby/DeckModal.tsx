@@ -7,10 +7,11 @@ interface DeckModalProps {
   onClose: () => void;
   cards: Card[];
   onSave: (name: string, cardIds: number[]) => void;
+  onDelete?: (deckId: number) => void;
   editingDeck?: Deck | null;
 }
 
-export function DeckModal({ isOpen, onClose, cards, onSave, editingDeck }: DeckModalProps) {
+export function DeckModal({ isOpen, onClose, cards, onSave, onDelete, editingDeck }: DeckModalProps) {
   const [name, setName] = useState('');
   const [selectedCardIds, setSelectedCardIds] = useState<number[]>([]);
 
@@ -53,6 +54,13 @@ export function DeckModal({ isOpen, onClose, cards, onSave, editingDeck }: DeckM
     setName('');
     setSelectedCardIds([]);
     onClose();
+  };
+
+  const handleDelete = () => {
+    if (editingDeck && onDelete && confirm(`Delete deck "${editingDeck.name}"?`)) {
+      onDelete(editingDeck.id);
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
@@ -102,9 +110,16 @@ export function DeckModal({ isOpen, onClose, cards, onSave, editingDeck }: DeckM
           })}
         </div>
 
-        <button className="btn-primary" onClick={handleSave}>
-          Save Deck
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="btn-primary" onClick={handleSave}>
+            {editingDeck ? 'Update Deck' : 'Save Deck'}
+          </button>
+          {editingDeck && onDelete && (
+            <button className="btn-surrender" onClick={handleDelete}>
+              Delete Deck
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
